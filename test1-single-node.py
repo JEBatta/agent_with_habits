@@ -14,9 +14,15 @@ for n in m.nodes:
  n.timeBeforeActive = 0
  n.activation = True
 
+myfile = open("influence_single_node.csv","w")
+myfile.write("x,y,motor1,motor2,V,A\n")
+
 for x in np.arange(0.35,0.65,0.01):
  for y in np.arange(0.35,0.65,0.01):
   a = SensorimotorState([],[x,y])
   mu = m.influence(a)
-  print(x,y,mu[0],mu[1])
+  w = str(x)+","+str(y)+","+str(mu[0])+","+str(mu[1])+","+str(m.V(a))+","+str(m.A(a))+"\n"
+  myfile.write(w)
+
+myfile.close()
 

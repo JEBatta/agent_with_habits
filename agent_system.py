@@ -8,7 +8,7 @@ class SensorimotorState:
   self.motorDim = len(m)
   self.state =np.concatenate((np.array(s),np.array(m)),axis = 0)
 
- def distance(self,state,kd=1000.0):
+ def distanceFactor(self,state,kd=1000.0):
   try:
    d = math.exp(kd*np.linalg.norm(self.state-np.array(state))**2)
    return 2/(1+d)
@@ -30,17 +30,17 @@ class Node:
   self.activation = False
   self.timeBeforeActive = 10
  
- def distance(self, point,kd=1000.0):
+ def distanceFactor(self, point,kd=1000.0):
   if isinstance(point,Node):
-   return self.smstate.distance(point.smstate.state,kd)
+   return self.smstate.distanceFactor(point.smstate.state,kd)
   if isinstance(point,SensorimotorState):
-   return self.smstate.distance(point.state,kd)
+   return self.smstate.distanceFactor(point.state,kd)
  
  def sigmoidalWeight(self,kw = 0.0025):
   return 2 / (1 + math.exp(-kw*self.weight))
 
  def updateNode(self,state):
-  self.weight += -1.0 + 10.0 * self.distance(state)
+  self.weight += -1.0 + 10.0 * self.distanceFactor(state)
   if self.timeBeforeActive > 0:
    self.timeBeforeActive -= 1
   if self.timeBeforeActive == 0:
@@ -63,7 +63,7 @@ class Medium:
    return None
   d = 0
   for n in [nd for nd in self.nodes if nd.activation]:
-   d += n.sigmoidalWeight() * n.distance(state) 
+   d += n.sigmoidalWeight() * n.distanceFactor(state) 
   return d
 
  def addNode(self,state,velocity,kt = 1):
@@ -76,7 +76,7 @@ class Medium:
   v = [0]*state.motorDim
   for n in [nd for nd in self.nodes if nd.activation]:
    npmotor = n.velocity[n.smstate.sensorDim:]
-   v+= n.sigmoidalWeight() * n.distance(state) * npmotor 
+   v+= n.sigmoidalWeight() * n.distanceFactor(state) * npmotor 
   return v
 
  def A(self,state):
@@ -86,7 +86,7 @@ class Medium:
    dum2 = SensorimotorState(dum1[:state.sensorDim],dum1[state.sensorDim:])
    Gmotor = n.Gamma(dum2)
    Gmotor = n.smstate.state[n.smstate.sensorDim:]
-   a+= n.sigmoidalWeight() * n.distance(state) * Gmotor 
+   a+= n.sigmoidalWeight() * n.distanceFactor(state) * Gmotor 
   return a
 
  def influence(self,state):
