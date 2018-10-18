@@ -8,7 +8,7 @@ import numpy as np
 sm = SensorimotorState([],[0.5,0.5])
 v = [0,0.1]
 
-m = Medium()
+	m = Medium()
 m.addNode(sm,v)
 for n in m.nodes:
  n.timeBeforeActive = 0

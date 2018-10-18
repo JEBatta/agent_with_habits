@@ -20,13 +20,13 @@ class SensorimotorState:
 
 class Node:
  
- def __init__(self,smstate,velocity):
+ def __init__(self,smstate,velocity,weight = 0.0):
   if isinstance(smstate,SensorimotorState):
    self.smstate = smstate
   else:
    self.smstate = None
   self.velocity = np.array(velocity)
-  self.weight = 0.0
+  self.weight = weight
   self.activation = False
   self.timeBeforeActive = 10
  
@@ -68,9 +68,9 @@ class Medium:
    d += n.weightFactor() * n.distanceFactor(smstate) 
   return d
 
- def addNode(self,smstate,velocity,kt = 1):
+ def addNode(self,smstate,velocity,weight=0.0,kt = 1):
   if isinstance(smstate,SensorimotorState) and self.density(smstate) < kt:
-   self.nodes.append(Node(smstate,velocity))
+   self.nodes.append(Node(smstate,velocity,weight))
   else:
    print "addNode input is not a Node."
 
