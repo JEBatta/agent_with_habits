@@ -35,8 +35,10 @@ class Node:
    return self.smstate.distanceFactor(point.smstate.state,kd)
   if isinstance(point,SensorimotorState):
    return self.smstate.distanceFactor(point.state,kd)
+  if isinstance(point,np.array):
+   return self.smstate.distanceFactor(point,kd)
  
- def sigmoidalWeight(self,kw = 0.0025):
+ def weightFactor(self,kw = 0.0025):
   return 2 / (1 + math.exp(-kw*self.weight))
 
  def updateNode(self,state):
@@ -46,48 +48,52 @@ class Node:
   if self.timeBeforeActive == 0:
    self.activation = True 
 
- def Gamma(self,state):
+ def Gamma(self,smstate):
   if np.linalg.norm(self.velocity) > 0:
    normState = self.velocity/np.linalg.norm(self.velocity)
-   return state.state - np.dot(state.state,normState) * normState
+   return smstate.state - np.dot(smstate.state,normState) * normState
   else:
-   return state.state
+   return smstate.state
    
 
 class Medium:
  def __init__(self):
   self.nodes = []
 
- def density(self,state):
-  if not isinstance(state,SensorimotorState):
+ def density(self,smstate):
+  if not isinstance(smstate,SensorimotorState):
    return None
   d = 0
   for n in [nd for nd in self.nodes if nd.activation]:
-   d += n.sigmoidalWeight() * n.distanceFactor(state) 
+   d += n.weightFactor() * n.distanceFactor(smstate) 
   return d
 
- def addNode(self,state,velocity,kt = 1):
-  if isinstance(state,SensorimotorState) and self.density(state) < kt:
-   self.nodes.append(Node(state,velocity))
+ def addNode(self,smstate,velocity,kt = 1):
+  if isinstance(smstate,SensorimotorState) and self.density(smstate) < kt:
+   self.nodes.append(Node(smstate,velocity))
   else:
    print "addNode input is not a Node."
 
- def V(self,state):
-  v = [0]*state.motorDim
+ def updateNodes(self,state):
+  for n in self.nodes():
+   n.updateNode(state)
+
+ def V(self,smstate):
+  v = [0]*smstate.motorDim
   for n in [nd for nd in self.nodes if nd.activation]:
    npmotor = n.velocity[n.smstate.sensorDim:]
-   v+= n.sigmoidalWeight() * n.distanceFactor(state) * npmotor 
+   v+= n.weightFactor() * n.distanceFactor(smstate) * npmotor 
   return v
 
- def A(self,state):
-  a = [0]*state.motorDim
+ def A(self,smstate):
+  a = [0]*smstate.motorDim
   for n in [nd for nd in self.nodes if nd.activation]:
-   dum1 = n.smstate.state - state.state
-   dum2 = SensorimotorState(dum1[:state.sensorDim],dum1[state.sensorDim:])
+   dum1 = n.smstate.state - smstate.state
+   dum2 = SensorimotorState(dum1[:smstate.sensorDim],dum1[smstate.sensorDim:])
    Gmotor = n.Gamma(dum2)
-   Gmotor = n.smstate.state[n.smstate.sensorDim:]
-   a+= n.sigmoidalWeight() * n.distanceFactor(state) * Gmotor 
+   Gmotor = Gmotor[n.smstate.sensorDim:]
+   a+= n.weightFactor() * n.distanceFactor(smstate) * Gmotor 
   return a
 
- def influence(self,state):
-  return (self.V(state) + self.A(state)) / self.density(state)
+ def influence(self,smstate):
+  return (self.V(smstate) + self.A(smstate)) / self.density(smstate)

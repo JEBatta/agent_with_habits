@@ -24,7 +24,7 @@ with open('influence_single_node.csv','rb') as f:
  next(reader)
  i = 0
  for row in reader:
-  U[i/31][i%31],V[i/31][i%31] = float(row[2]),float(row[3])
+  U[i/31][i%31],V[i/31][i%31] = float(row[4]),float(row[5])
   i += 1
 speed = np.sqrt(U*U + V*V)
 
