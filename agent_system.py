@@ -11,7 +11,7 @@ class SensorimotorState:
  def distanceFactor(self,state,kd=1000.0):
   try:
    d = math.exp(kd*np.linalg.norm(self.state-np.array(state))**2)
-   return 2/(1+d)
+   return float(2/(1+d))
   except ValueError:
    print "Sensorimotor states must have the same length."
   except OverflowError:
@@ -35,18 +35,17 @@ class Node:
    return self.smstate.distanceFactor(point.smstate.state,kd)
   if isinstance(point,SensorimotorState):
    return self.smstate.distanceFactor(point.state,kd)
-  if isinstance(point,np.array):
-   return self.smstate.distanceFactor(point,kd)
  
  def weightFactor(self,kw = 0.0025):
   return 2 / (1 + math.exp(-kw*self.weight))
 
- def updateNode(self,state):
-  self.weight += -1.0 + 10.0 * self.distanceFactor(state)
-  if self.timeBeforeActive > 0:
-   self.timeBeforeActive -= 1
-  if self.timeBeforeActive == 0:
-   self.activation = True 
+ def updateNode(self,smstate):
+  if isinstance(smstate,SensorimotorState):
+   self.weight += -1.0 + 10.0 * self.distanceFactor(smstate)
+   if self.timeBeforeActive > 0:
+    self.timeBeforeActive -= 1
+   if self.timeBeforeActive == 0:
+    self.activation = True 
 
  def Gamma(self,smstate):
   if np.linalg.norm(self.velocity) > 0:
@@ -72,18 +71,19 @@ class Medium:
   if isinstance(smstate,SensorimotorState) and self.density(smstate) < kt:
    self.nodes.append(Node(smstate,velocity,weight))
   else:
-   print "addNode input is not a Node."
+   print "input is not a Node or density is to high."
 
- def updateNodes(self,state):
-  for n in self.nodes():
-   n.updateNode(state)
+ def updateNodes(self,smstate):
+  if isinstance(smstate,SensorimotorState):
+   for n in self.nodes:
+    n.updateNode(smstate)
 
  def V(self,smstate):
   v = [0]*smstate.motorDim
   for n in [nd for nd in self.nodes if nd.activation]:
    npmotor = n.velocity[n.smstate.sensorDim:]
    v+= n.weightFactor() * n.distanceFactor(smstate) * npmotor 
-  return v
+  return np.array(v)
 
  def A(self,smstate):
   a = [0]*smstate.motorDim
@@ -93,7 +93,11 @@ class Medium:
    Gmotor = n.Gamma(dum2)
    Gmotor = Gmotor[n.smstate.sensorDim:]
    a+= n.weightFactor() * n.distanceFactor(smstate) * Gmotor 
-  return a
+  return np.array(a)
 
  def influence(self,smstate):
-  return (self.V(smstate) + self.A(smstate)) / self.density(smstate)
+  try:
+   dmu = (self.V(smstate) + self.A(smstate)) / self.density(smstate)
+  except ZeroDivisionError: 
+   dmu = np.array([float("Inf"),float("Inf")])
+  return dmu
