@@ -14,7 +14,7 @@ v2 = [1,0]
 v3 = [0,-1]
 v4 = [-1,0]
 
-weight = -500.0 #Use the values -5000, -1000, 0, 500 and 1000 
+weight = 100.0 #Use the values -500, -100, 0, 50 and 100 
 m = Medium()
 m.addNode(s1,v1)
 m.addNode(s2,v2)

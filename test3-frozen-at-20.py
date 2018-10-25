@@ -6,14 +6,16 @@ import math
 
 # training a medium 20 time-units and then frozen its influence
 m = Medium()
-s0=SensorimotorState([],[0.875,0.5]) 
-for t in range(1,21):
+s0=SensorimotorState([],[0.875,0.5])
+dt = 0.1
+trainingPhase = np.arange(dt,20+dt,dt)
+for t in trainingPhase:
  m1 = (1 + 0.75*math.cos(2*math.pi*t/10))/ 2
  m2 = (1 + 0.75*math.sin(2*math.pi*t/10))/ 2
  s = SensorimotorState([],[m1,m2])
  v = s.state-s0.state
  m.addNode(s0,v)
- m.updateNodes(s0)
+ m.updateNodes(s0,dt)
  s0 = s
 
 for n in m.nodes:

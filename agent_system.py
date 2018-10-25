@@ -39,9 +39,9 @@ class Node:
  def weightFactor(self,kw = 0.0025):
   return 2 / (1 + math.exp(-kw*self.weight))
 
- def updateNode(self,smstate):
+ def updateNode(self,smstate,dt = 1):
   if isinstance(smstate,SensorimotorState):
-   self.weight += -1.0 + 10.0 * self.distanceFactor(smstate)
+   self.weight += dt*(- 1 + 10.0 * self.distanceFactor(smstate))
    if self.timeBeforeActive > 0:
     self.timeBeforeActive -= 1
    if self.timeBeforeActive == 0:
@@ -59,45 +59,43 @@ class Medium:
  def __init__(self):
   self.nodes = []
 
- def density(self,smstate):
+ def density(self,smstate,kd = 1000,kw = 0.0025):
   if not isinstance(smstate,SensorimotorState):
    return None
   d = 0
   for n in [nd for nd in self.nodes if nd.activation]:
-   d += n.weightFactor() * n.distanceFactor(smstate) 
+   d += n.weightFactor(kw) * n.distanceFactor(smstate,kd) 
   return d
 
  def addNode(self,smstate,velocity,weight=0.0,kt = 1):
   if isinstance(smstate,SensorimotorState) and self.density(smstate) < kt:
    self.nodes.append(Node(smstate,velocity,weight))
-  else:
-   print "input is not a Node or density is to high."
 
- def updateNodes(self,smstate):
+ def updateNodes(self,smstate,dt = 1):
   if isinstance(smstate,SensorimotorState):
    for n in self.nodes:
-    n.updateNode(smstate)
+    n.updateNode(smstate,dt)
 
- def V(self,smstate):
+ def V(self,smstate, kd = 1000,kw = 0.0025):
   v = [0]*smstate.motorDim
   for n in [nd for nd in self.nodes if nd.activation]:
    npmotor = n.velocity[n.smstate.sensorDim:]
-   v+= n.weightFactor() * n.distanceFactor(smstate) * npmotor 
+   v+= (n.weightFactor(kw) * n.distanceFactor(smstate,kd) * npmotor) 
   return np.array(v)
 
- def A(self,smstate):
+ def A(self,smstate, kd = 1000,kw = 0.0025):
   a = [0]*smstate.motorDim
   for n in [nd for nd in self.nodes if nd.activation]:
    dum1 = n.smstate.state - smstate.state
    dum2 = SensorimotorState(dum1[:smstate.sensorDim],dum1[smstate.sensorDim:])
    Gmotor = n.Gamma(dum2)
    Gmotor = Gmotor[n.smstate.sensorDim:]
-   a+= n.weightFactor() * n.distanceFactor(smstate) * Gmotor 
+   a+= (n.weightFactor(kw) * n.distanceFactor(smstate,kd) * Gmotor) 
   return np.array(a)
 
- def influence(self,smstate):
+ def influence(self,smstate,kd = 1000,kw = 0.0025):
   try:
-   dmu = (self.V(smstate) + self.A(smstate)) / self.density(smstate)
+   dmu = (self.V(smstate,kd,kw) + self.A(smstate,kd,kw)) / self.density(smstate,kd,kw)
   except ZeroDivisionError: 
    dmu = np.array([float("Inf"),float("Inf")])
   return dmu

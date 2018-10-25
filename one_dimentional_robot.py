@@ -1,3 +1,4 @@
+
 class Robot:
  
  def __init__(self,x):
@@ -8,10 +9,14 @@ class Robot:
  def SensorUpdate(self, light):
   self.s = 1 / (1 + (self.x - light.x)**2)
 
- def MotorAction(self):
-  self.x = self.x + self.m
+ def MotorAction(self,dt = 1):
+  self.x = self.x + dt * self.m
+
+ def SetPosition(self, x0):
+  self.x = x0
  
  def MotorUpdate(self,newm):
+  newm = max(min(newm,1),-1)
   self.m = newm
 
 class Light:

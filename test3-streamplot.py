@@ -22,6 +22,7 @@ v1, v2 = np.mgrid[0.0:0.0:101j, 0.0:0.0:101j]
 a1, a2 = np.mgrid[0.0:0.0:101j, 0.0:0.0:101j]
 
 with open('influence_frozen_at_20.csv','rb') as f:
+#with open('test4_influence.csv','rb') as f:
  reader = csv.reader(f)
  next(reader)
  i = 0
@@ -52,4 +53,5 @@ ax2.streamplot(X, Y, m1, m2, density=0.7, color='k', linewidth=lw)
 ax2.set_title('Combined')
 
 plt.tight_layout()
+plt.savefig("test3-frozen-at-20.png")
 plt.show()
