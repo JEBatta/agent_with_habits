@@ -5,6 +5,9 @@ import numpy as np
 import math
 
 # training a medium 20 time-units and then frozen its influence
+kd = 100
+kw = 0.025
+
 m = Medium()
 s0=SensorimotorState([],[0.875,0.5])
 dt = 0.1
@@ -28,7 +31,7 @@ myfile.write("m1,m2,dm1,dm2,v1,v2,a1,a2\n")
 for y in np.arange(0.0,1.0,0.01):
  for x in np.arange(0.0,1.0,0.01):
   a = SensorimotorState([],[x,y])
-  mu = m.influence(a)
+  mu = m.influence(a,kd,kw)
   Va = m.V(a)
   Aa = m.A(a)
   w = str(x)+","+str(y)+","+str(mu[0])+","+str(mu[1])+","+str(Va[0])+","+str(Va[1])+","+str(Aa[0])+","+str(Aa[1])+"\n"

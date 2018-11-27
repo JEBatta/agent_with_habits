@@ -37,13 +37,15 @@ class Node:
    return self.smstate.distanceFactor(point.state,kd)
  
  def weightFactor(self,kw = 0.0025):
-  return 2 / (1 + math.exp(-kw*self.weight))
-
- def updateNode(self,smstate,dt = 1):
+  try:
+   return 2 / (1 + math.exp(-kw*self.weight))
+  except OverflowError:
+   return 0
+ def updateNode(self,smstate,k = 10.0,dt = 0.01):
   if isinstance(smstate,SensorimotorState):
-   self.weight += dt*(- 1 + 10.0 * self.distanceFactor(smstate))
+   self.weight += dt*(- 1.0 + k * self.distanceFactor(smstate))
    if self.timeBeforeActive > 0:
-    self.timeBeforeActive -= 1
+    self.timeBeforeActive -= dt
    if self.timeBeforeActive == 0:
     self.activation = True 
 
@@ -63,6 +65,14 @@ class Medium:
   if not isinstance(smstate,SensorimotorState):
    return None
   d = 0
+  for n in self.nodes:
+   d += n.weightFactor(kw) * n.distanceFactor(smstate,kd) 
+  return d
+
+ def densityActivated(self,smstate,kd = 1000,kw = 0.0025):
+  if not isinstance(smstate,SensorimotorState):
+   return None
+  d = 0
   for n in [nd for nd in self.nodes if nd.activation]:
    d += n.weightFactor(kw) * n.distanceFactor(smstate,kd) 
   return d
@@ -71,10 +81,10 @@ class Medium:
   if isinstance(smstate,SensorimotorState) and self.density(smstate) < kt:
    self.nodes.append(Node(smstate,velocity,weight))
 
- def updateNodes(self,smstate,dt = 1):
+ def updateNodes(self,smstate,k = 10.0,dt = 0.01):
   if isinstance(smstate,SensorimotorState):
    for n in self.nodes:
-    n.updateNode(smstate,dt)
+    n.updateNode(smstate,k,dt)
 
  def V(self,smstate, kd = 1000,kw = 0.0025):
   v = [0]*smstate.motorDim
@@ -94,8 +104,9 @@ class Medium:
   return np.array(a)
 
  def influence(self,smstate,kd = 1000,kw = 0.0025):
-  try:
-   dmu = (self.V(smstate,kd,kw) + self.A(smstate,kd,kw)) / self.density(smstate,kd,kw)
-  except ZeroDivisionError: 
-   dmu = np.array([float("Inf"),float("Inf")])
+  V = self.V(smstate,kd,kw)
+  A = self.A(smstate,kd,kw)
+  dmu = np.array([0]*smstate.motorDim)
+  if np.linalg.norm(V+A) > 0:
+   dmu = (A + V) / (self.densityActivated(smstate,kd,kw))
   return dmu
