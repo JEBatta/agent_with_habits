@@ -5,6 +5,6 @@ This repository contains python classes and programms to reproduce four results 
 1. test1. Influence of a single node 
 2. test2. Influence of four nodes
 3. test3. Influence of a medium "frozen" at a given time
-4- test4. Training and control of IDSM of one-dimentional robot with one motor and a light sensor.
+4. test4. Training and control of IDSM of one-dimentional robot with one motor and a light sensor.
 
 Each folder contains the codes to create figures.
